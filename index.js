@@ -118,7 +118,8 @@ var FaceplateSession = function(plate, token) {
       params.access_token = self.token;
 
     restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
-      cb(JSON.parse(data).data);
+      var result = JSON.parse(data);
+      cb(result.data ? result.data : result);
     });
   }
 
