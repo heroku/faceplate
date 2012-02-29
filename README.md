@@ -6,7 +6,7 @@ A Node.js wrapper for Facebook authentication and API
 
 Use as a connect middleware
 
-    :::javascript
+    ```javascript
     // create an express webserver
     var app = require('express').createServer(
       express.bodyParser(),
@@ -31,6 +31,7 @@ Use as a connect middleware
         req.send('friends using app: ' + require('util').inspect(friends_using_app));
       });
     });
+    ```
 
 ## License
 
