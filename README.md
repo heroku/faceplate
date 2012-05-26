@@ -33,8 +33,8 @@ app.get('/friends_using_app', function(req, res) {
 });
 
 // See the full signed request details
-app.get('/signedRequest', function(req, res) {
-  res.send('Signed Request details: ' + require('util').inspect(req.facebook.signed_req));
+app.get('/signed_request', function(req, res) {
+  res.send('Signed Request details: ' + require('util').inspect(req.facebook.signed_request));
 });
 
 ```
