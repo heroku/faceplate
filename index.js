@@ -90,8 +90,10 @@ var FaceplateSession = function(plate, signedRequest) {
   var self = this;
 
   this.plate = plate;
-  this.token  = signedRequest.oauth_token;
-  this.signedReq = signedRequest;
+  if (signedRequest) {
+      this.token  = signedRequest.oauth_token;
+      this.signedReq = signedRequest;
+  }
 
   this.app = function(cb) {
     self.get('/' + self.plate.app_id, function(app) {
