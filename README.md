@@ -31,6 +31,12 @@ app.get('/friends_using_app', function(req, res) {
     res.send('friends using app: ' + require('util').inspect(friends_using_app));
   });
 });
+
+// See the full signed request details
+app.get('/signedRequest', function(req, res) {
+  res.send('Signed Request details: ' + require('util').inspect(req.facebook.signed_req));
+});
+
 ```
 
 ## License
