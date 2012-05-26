@@ -15,8 +15,8 @@ var Faceplate = function(options) {
   this.middleware = function() {
     return function(req, res, next) {
       if (req.body.signed_request) {
-        self.parse_signed_request(req.body.signed_request, function(token) {
-          req.facebook = new FaceplateSession(self, token);
+        self.parse_signed_request(req.body.signed_request, function(token, fullSignedReq) {
+          req.facebook = new FaceplateSession(self, token, fullSignedReq);
           next();
         });
       } else if (req.cookies["fbsr_" + self.app_id]) {
@@ -57,7 +57,7 @@ var Faceplate = function(options) {
     }
 
     if (data.oauth_token) {
-      cb(data.oauth_token);
+      cb(data.oauth_token, data);
       return;
     }
 
@@ -80,17 +80,19 @@ var Faceplate = function(options) {
     });
 
     request.on('success', function(data) {
-      cb(qs.parse(data).access_token);
+      var parsed = qs.parse(data);
+      cb(parsed.access_token, parsed);
     });
   }
 }
 
-var FaceplateSession = function(plate, token) {
+var FaceplateSession = function(plate, token, fulSignedReq) {
 
   var self = this;
 
   this.plate = plate;
   this.token  = token;
+  this.signedReq = fullSignedReq
 
   this.app = function(cb) {
     self.get('/' + self.plate.app_id, function(app) {
