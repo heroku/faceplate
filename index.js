@@ -56,7 +56,7 @@ var Faceplate = function(options) {
       return;
     }
 
-    if (data.oauth_token) {
+    if (data.access_token) {
       cb(data);
       return;
     }
@@ -91,7 +91,7 @@ var FaceplateSession = function(plate, signed_request) {
 
   this.plate = plate;
   if (signed_request) {
-      this.token  = signed_request.oauth_token;
+      this.token  = signed_request.access_token;
       this.signed_request = signed_request;
   }
 
