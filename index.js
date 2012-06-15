@@ -50,9 +50,9 @@ var Faceplate = function(options) {
     if (sig !== expected_sig)
       throw("bad signature");
 
-    // not logged in
+    // not logged in or not authorized
     if (!data.user_id) {
-      cb();
+      cb(data);
       return;
     }
 
