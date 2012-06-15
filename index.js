@@ -120,10 +120,14 @@ var FaceplateSession = function(plate, signed_request) {
     if (self.token)
       params.access_token = self.token;
 
-    restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
-      var result = JSON.parse(data);
-      cb(result.data ? result.data : result);
-    });
+    try {
+      restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
+        var result = JSON.parse(data);
+        cb(null, result);
+      });
+    } catch (err) {
+      cb(err);
+    }
   }
 
   this.fql = function(query, cb) {
