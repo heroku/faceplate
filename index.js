@@ -135,6 +135,20 @@ var FaceplateSession = function(plate, signed_request) {
       cb(data);
     });
   }
+
+  this.post = function (params, cb) {
+    restler.post(
+      'https://graph.facebook.com/me/feed',
+      {
+        query:{
+          access_token:self.token
+        },
+        data: params
+      }).on('complete', function (data) {
+        var result = JSON.parse(data);
+        cb(result.data ? result.data : result);
+      });
+  }
 }
 
 module.exports.middleware = function(options) {
