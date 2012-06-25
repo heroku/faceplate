@@ -32,6 +32,18 @@ app.get('/friends_using_app', function(req, res) {
   });
 });
 
+// perform multiple fql queries at once
+app.get('/multiquery', function(req, res) {
+  req.facebook.fql({
+    likes: 'SELECT user_id, object_id, post_id FROM like WHERE user_id=me()',
+    albums: 'SELECT object_id, cover_object_id, name FROM album WHERE owner=me()',
+  },
+  function(result) {
+    var inspect = require('util').inspect;
+    res.send('Yor likes: ' + inspect(result.likes) + ', your albums: ' + inspect(result.albums) );
+  });
+});
+
 // See the full signed request details
 app.get('/signed_request', function(req, res) {
   res.send('Signed Request details: ' + require('util').inspect(req.facebook.signed_request));
