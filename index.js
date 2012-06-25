@@ -127,7 +127,18 @@ var FaceplateSession = function(plate, signed_request) {
   }
 
   this.fql = function(query, cb) {
-    restler.get('https://api.facebook.com/method/fql.query', { query: { access_token: self.token, query:query, format:'json' } }).on('complete', function(data) {
+    var params = { access_token: self.token, format:'json' };
+    var method;
+
+    if (typeof query == 'string') {
+      method = 'fql.query';
+      params.query = query;
+    }
+    else {
+      method = 'fql.multiquery';
+      params.queries = JSON.stringify(query);
+    }
+    restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', function(data) {
       cb(data);
     });
   }
