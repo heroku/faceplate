@@ -96,7 +96,7 @@ var FaceplateSession = function(plate, signed_request) {
   }
 
   this.app = function(cb) {
-    self.get('/' + self.plate.app_id, function(app) {
+    self.get('/' + self.plate.app_id, function(err, app) {
       cb(app);
     });
   }
