@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/heroku/faceplate.png)](http://travis-ci.org/heroku/faceplate)
 # faceplate
 
 A Node.js wrapper for Facebook authentication and API
