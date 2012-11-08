@@ -158,7 +158,7 @@ var FaceplateSession = function(plate, signed_request) {
     restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', onComplete);
   }
 
-  this.post = function (params, cb) {
+  this.postFeed = function (params, cb) {
     restler.post(
       'https://graph.facebook.com/me/feed',
       {
