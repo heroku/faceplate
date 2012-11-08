@@ -92,6 +92,14 @@ var FaceplateSession = function(plate, signed_request) {
 
   var self = this;
 
+  var _handleAPIResult(data, cb){
+      var result = JSON.parse(data);
+      if(result.error){
+        cb(new fbError(result.error), result);
+      }else{
+        cb(null, result.data ? result.data : result);
+      }
+  }
   this.plate = plate;
   if (signed_request) {
       this.token  = signed_request.access_token || signed_request.oauth_token;
@@ -123,10 +131,7 @@ var FaceplateSession = function(plate, signed_request) {
     params = merge({access_token: self.token}, params || {});
 
     try {
-      restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
-        var result = JSON.parse(data);
-        cb(null, result);
-      });
+      restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', _handleAPIResult);
     } catch (err) {
       cb(err);
     }
@@ -170,10 +175,7 @@ var FaceplateSession = function(plate, signed_request) {
         'https://graph.facebook.com' + path,
         {
           data: params
-        }).on('complete', function (data) {
-            var result = JSON.parse(data);
-            cb(null, result.data ? result.data : result);
-        });
+        }).on('complete', _handleAPIResult);
       } catch(err){
         cb(err, null);
       }
