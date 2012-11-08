@@ -4,6 +4,7 @@ var qs      = require('querystring');
 var restler = require('restler');
 var util    = require('util');
 var tools   = require('./tools');
+var fbError = require('./FacebookApiError');
 var merge   = tools.merge;
 
 var Faceplate = function(options) {
@@ -157,21 +158,37 @@ var FaceplateSession = function(plate, signed_request) {
     }
     restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', onComplete);
   }
+  this.post = function (url, params, cb) {
+    if(cb === undefined){
+      cb = params;
+      params = {};
+    }
+    // access_token can be passed via post data 
+    params = merge({access_token: self.token}, params);
+    try{
+      restler.post(
+        'https://graph.facebook.com' + path,
+        {
+          data: params
+        }).on('complete', function (data) {
+            var result = JSON.parse(data);
+            cb(null, result.data ? result.data : result);
+        });
+      } catch(err){
+        cb(err, null);
+      }
+  }
 
   this.postFeed = function (params, cb) {
-    restler.post(
-      'https://graph.facebook.com/me/feed',
-      {
-        query:{
-          access_token:self.token
-        },
-        data: params
-      }).on('complete', function (data) {
-        var result = JSON.parse(data);
-        cb(result.data ? result.data : result);
+    if(self.token){
+      self.post('/me/feed', params, function(err, result){
+        cb(result);
       });
+    }else{
+      cb();
+    }
   }
-}
+
 
 module.exports.middleware = function(options) {
   return new Faceplate(options).middleware();
