@@ -3,6 +3,8 @@ var crypto  = require('crypto');
 var qs      = require('querystring');
 var restler = require('restler');
 var util    = require('util');
+var tools   = require('./tools');
+var merge   = tools.merge;
 
 var Faceplate = function(options) {
 
@@ -117,8 +119,7 @@ var FaceplateSession = function(plate, signed_request) {
       params = {};
     }
 
-    if (self.token)
-      params.access_token = self.token;
+    params = merge({access_token: self.token}, params || {});
 
     try {
       restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
