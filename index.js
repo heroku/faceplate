@@ -92,20 +92,46 @@ var FaceplateSession = function(plate, signed_request) {
 
   var self = this;
 
-  var _handleAPIResult(data, cb){
-      var result = JSON.parse(data);
-      if(result.error){
-        cb(new fbError(result.error), result);
-      }else{
-        cb(null, result.data ? result.data : result);
-      }
-  }
   this.plate = plate;
   if (signed_request) {
       this.token  = signed_request.access_token || signed_request.oauth_token;
       this.signed_request = signed_request;
   }
 
+  function _handleAPIResult(data, cb){
+      var result = JSON.parse(data);
+      if(result.error){
+        cb(new fbError(result.error), result);
+      }else{
+        cb(null, result && result.data ? result.data : result);
+      }
+  }
+
+  this.appSession = function(cb){
+    var params = {
+      client_id: self.plate.app_id,
+      client_secret: self.plate.secret,
+      grant_type: 'client_credentials'
+    };
+    try{
+      restler.post('https://graph.facebook.com/oauth/access_token',{
+        data: params
+      }).on('complete', function(data){
+          var result = qs.parse(data);
+          if(result.access_token){
+            var session = new FaceplateSession(self.plate, self.signed_request);
+            session.token = result.access_token;
+            cb(null, session);
+          }else{
+            result = JSON.parse(data);
+            cb(new fbError(result && result.error), result);
+          }
+
+      });
+    }catch(err){
+      cb(err);
+    }
+  }
   this.app = function(cb) {
     self.get('/' + self.plate.app_id, function(err, app) {
       cb(app);
