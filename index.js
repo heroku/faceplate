@@ -189,6 +189,7 @@ var FaceplateSession = function(plate, signed_request) {
     }
     restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', onComplete);
   }
+
   this.post = function (url, params, cb) {
     if(cb === undefined){
       cb = params;
@@ -216,8 +217,9 @@ var FaceplateSession = function(plate, signed_request) {
       cb();
     }
   }
-
+}
 
 module.exports.middleware = function(options) {
   return new Faceplate(options).middleware();
 }
+
