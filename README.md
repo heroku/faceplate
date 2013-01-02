@@ -8,9 +8,17 @@ Use as a connect middleware
 
 ```javascript
 // create an express webserver
-var app = require('express').createServer(
-  express.bodyParser(),
-  express.cookieParser(),
+var app = require('express')();
+
+app.use(
+  express.bodyParser()
+);
+
+app.use(
+  express.cookieParser()
+);
+
+app.use(
   require('faceplate').middleware({
     app_id: process.env.FACEBOOK_APP_ID,
     secret: process.env.FACEBOOK_SECRET,
@@ -20,7 +28,7 @@ var app = require('express').createServer(
 
 // show friends
 app.get('/friends', function(req, res) {
-  req.facebook.get('/me/friends', { limit: 4 }, function(friends) {
+  req.facebook.get('/me/friends', { limit: 4 }, function(err, friends) {
     res.send('friends: ' + require('util').inspect(friends));
   });
 });
