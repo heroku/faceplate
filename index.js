@@ -2,7 +2,6 @@ var b64url  = require('b64url');
 var crypto  = require('crypto');
 var qs      = require('querystring');
 var restler = require('restler');
-var util    = require('util');
 
 var Faceplate = function(options) {
 
@@ -28,8 +27,8 @@ var Faceplate = function(options) {
         req.facebook = new FaceplateSession(self);
         next();
       }
-    }
-  }
+    };
+  };
 
   this.parse_signed_request = function(signed_request, cb) {
     var encoded_data = signed_request.split('.', 2);
@@ -82,8 +81,8 @@ var Faceplate = function(options) {
     request.on('success', function(data) {
       cb(qs.parse(data));
     });
-  }
-}
+  };
+};
 
 var FaceplateSession = function(plate, signed_request) {
 
@@ -99,7 +98,7 @@ var FaceplateSession = function(plate, signed_request) {
     self.get('/' + self.plate.app_id, function(err, app) {
       cb(app);
     });
-  }
+  };
 
   this.me = function(cb) {
     if (self.token) {
@@ -109,7 +108,7 @@ var FaceplateSession = function(plate, signed_request) {
     } else {
       cb();
     }
-  }
+  };
 
   this.get = function(path, params, cb) {
     if (cb === undefined) {
@@ -128,7 +127,7 @@ var FaceplateSession = function(plate, signed_request) {
     } catch (err) {
       cb(err);
     }
-  }
+  };
 
   this.fql = function(query, cb) {
     var params = { access_token: self.token, format:'json' };
@@ -155,7 +154,7 @@ var FaceplateSession = function(plate, signed_request) {
       };
     }
     restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', onComplete);
-  }
+  };
 
   this.post = function (params, cb) {
     restler.post(
@@ -169,9 +168,9 @@ var FaceplateSession = function(plate, signed_request) {
         var result = JSON.parse(data);
         cb(result.data ? result.data : result);
       });
-  }
-}
+  };
+};
 
 module.exports.middleware = function(options) {
   return new Faceplate(options).middleware();
-}
+};
