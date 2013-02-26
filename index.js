@@ -2,7 +2,6 @@ var b64url  = require('b64url');
 var crypto  = require('crypto');
 var qs      = require('querystring');
 var restler = require('restler');
-var util    = require('util');
 
 var Faceplate = function(options) {
 
@@ -28,8 +27,8 @@ var Faceplate = function(options) {
         req.facebook = new FaceplateSession(self);
         next();
       }
-    }
-  }
+    };
+  };
 
   this.parse_signed_request = function(signed_request, cb) {
     var encoded_data = signed_request.split('.', 2);
@@ -40,7 +39,7 @@ var Faceplate = function(options) {
 
     // check algorithm
     if (!data.algorithm || (data.algorithm.toUpperCase() != 'HMAC-SHA256')) {
-      throw("unknown algorithm. expected HMAC-SHA256");
+      cb(new Error("unknown algorithm. expected HMAC-SHA256"));
     }
 
     // check signature
@@ -48,21 +47,21 @@ var Faceplate = function(options) {
     var expected_sig = crypto.createHmac('sha256', secret).update(encoded_data[1]).digest('base64').replace(/\+/g,'-').replace(/\//g,'_').replace('=','');
 
     if (sig !== expected_sig)
-      throw("bad signature");
+      cb(new Error("bad signature"));
 
     // not logged in or not authorized
     if (!data.user_id) {
-      cb(data);
+      cb(null,data);
       return;
     }
 
     if (data.access_token || data.oauth_token) {
-      cb(data);
+      cb(null,data);
       return;
     }
 
     if (!data.code)
-      throw("no oauth token and no code to get one");
+      cb(new Error("no oauth token and no code to get one"));
 
     var params = {
       client_id:     self.app_id,
@@ -71,19 +70,19 @@ var Faceplate = function(options) {
       code:          data.code
     };
 
-    var request = restler.get('https://graph.facebook.com/oauth/access_token', { query:params });
+    var request = restler.get('https://graph.facebook.com/oauth/access_token',
+      { query:params });
 
     request.on('fail', function(data) {
       var result = JSON.parse(data);
-      console.log('invalid code: ' + result.error.message);
-      cb();
+      cb(result);
     });
 
     request.on('success', function(data) {
-      cb(qs.parse(data));
+      cb(null,qs.parse(data));
     });
-  }
-}
+  };
+};
 
 var FaceplateSession = function(plate, signed_request) {
 
@@ -97,19 +96,19 @@ var FaceplateSession = function(plate, signed_request) {
 
   this.app = function(cb) {
     self.get('/' + self.plate.app_id, function(err, app) {
-      cb(app);
+      cb(err,app);
     });
-  }
+  };
 
   this.me = function(cb) {
     if (self.token) {
       self.get('/me', function(err, me) {
-        cb(me);
+        cb(err,me);
       });
     } else {
-      cb();
+      cb(null,null);
     }
-  }
+  };
 
   this.get = function(path, params, cb) {
     if (cb === undefined) {
@@ -121,14 +120,20 @@ var FaceplateSession = function(plate, signed_request) {
       params.access_token = self.token;
 
     try {
-      restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
-        var result = JSON.parse(data);
-        cb(null, result);
-      });
+        var request = restler.get('https://graph.facebook.com' + path,
+          { query: params });
+        request.on('fail', function(data) {
+          var result = JSON.parse(data);
+          cb(result);
+        });
+        request.on('success', function(data) {
+          var result = JSON.parse(data);
+          cb(null, result);
+        });
     } catch (err) {
       cb(err);
     }
-  }
+  };
 
   this.fql = function(query, cb) {
     var params = { access_token: self.token, format:'json' };
@@ -138,7 +143,10 @@ var FaceplateSession = function(plate, signed_request) {
     if (typeof query == 'string') {
       method = 'fql.query';
       params.query = query;
-      onComplete = cb;
+      onComplete = function(res){
+        var result = JSON.parse(res);
+        cb(null, result.data ? result.data : result);
+      };
     }
     else {
       method = 'fql.multiquery';
@@ -151,27 +159,34 @@ var FaceplateSession = function(plate, signed_request) {
         res.forEach(function(q) {
           data[q.name] = q.fql_result_set;
         });
-        cb(data);
+        cb(null,data);
       };
     }
-    restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', onComplete);
-  }
+    var request = restler.get('https://api.facebook.com/method/'+method,
+      { query: params });
+    request.on('fail', function(data) {
+      var result = JSON.parse(data);
+      cb(result);
+    });
+    request.on('success', onComplete);
+  };
 
   this.post = function (params, cb) {
-    restler.post(
+    var request = restler.post(
       'https://graph.facebook.com/me/feed',
-      {
-        query:{
-          access_token:self.token
-        },
-        data: params
-      }).on('complete', function (data) {
-        var result = JSON.parse(data);
-        cb(result.data ? result.data : result);
-      });
-  }
-}
+      {query: {access_token: self.token}, data: params}
+      );
+    request.on('fail', function(data) {
+      var result = JSON.parse(data);
+      cb(result);
+    });
+    request.on('success', function (data) {
+      var result = JSON.parse(data);
+      cb(null, result.data ? result.data : result);
+    });
+  };
+};
 
 module.exports.middleware = function(options) {
   return new Faceplate(options).middleware();
-}
+};
