@@ -7,24 +7,23 @@ var Faceplate = function(options) {
 
   var self = this;
 
-  this.options = options || {};
-  this.app_id  = this.options.app_id;
-  this.secret  = this.options.secret;
+  this.app_id = options.app_id;
+  this.secret = options.secret;
 
   this.middleware = function() {
     return function(req, res, next) {
       if (req.body.signed_request) {
         self.parse_signed_request(req.body.signed_request, function(decoded_signed_request) {
-          req.facebook = new FaceplateSession(self, decoded_signed_request);
+          req.facebook = new FaceplateSession(options, decoded_signed_request);
           next();
         });
       } else if (req.cookies["fbsr_" + self.app_id]) {
         self.parse_signed_request(req.cookies["fbsr_" + self.app_id], function(decoded_signed_request) {
-          req.facebook = new FaceplateSession(self, decoded_signed_request);
+          req.facebook = new FaceplateSession(options, decoded_signed_request);
           next();
         });
       } else {
-        req.facebook = new FaceplateSession(self);
+        req.facebook = new FaceplateSession(options);
         next();
       }
     };
@@ -84,18 +83,20 @@ var Faceplate = function(options) {
   };
 };
 
-var FaceplateSession = function(plate, signed_request) {
+var FaceplateSession = function(options, signed_request) {
 
   var self = this;
 
-  this.plate = plate;
+  this.app_id = options.app_id;
+  this.secret = options.secret;
+  
   if (signed_request) {
       this.token  = signed_request.access_token || signed_request.oauth_token;
       this.signed_request = signed_request;
   }
 
   this.app = function(cb) {
-    self.get('/' + self.plate.app_id, function(err, app) {
+    self.get('/' + self.app_id, function(err, app) {
       cb(app);
     });
   };
