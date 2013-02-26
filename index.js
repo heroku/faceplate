@@ -2,34 +2,32 @@ var b64url  = require('b64url');
 var crypto  = require('crypto');
 var qs      = require('querystring');
 var restler = require('restler');
-var util    = require('util');
 
 var Faceplate = function(options) {
 
   var self = this;
 
-  this.options = options || {};
-  this.app_id  = this.options.app_id;
-  this.secret  = this.options.secret;
+  this.app_id = options.app_id;
+  this.secret = options.secret;
 
   this.middleware = function() {
     return function(req, res, next) {
       if (req.body.signed_request) {
         self.parse_signed_request(req.body.signed_request, function(decoded_signed_request) {
-          req.facebook = new FaceplateSession(self, decoded_signed_request);
+          req.facebook = new FaceplateSession(options, decoded_signed_request);
           next();
         });
       } else if (req.cookies["fbsr_" + self.app_id]) {
         self.parse_signed_request(req.cookies["fbsr_" + self.app_id], function(decoded_signed_request) {
-          req.facebook = new FaceplateSession(self, decoded_signed_request);
+          req.facebook = new FaceplateSession(options, decoded_signed_request);
           next();
         });
       } else {
-        req.facebook = new FaceplateSession(self);
+        req.facebook = new FaceplateSession(options);
         next();
       }
-    }
-  }
+    };
+  };
 
   this.parse_signed_request = function(signed_request, cb) {
     var encoded_data = signed_request.split('.', 2);
@@ -82,24 +80,26 @@ var Faceplate = function(options) {
     request.on('success', function(data) {
       cb(qs.parse(data));
     });
-  }
-}
+  };
+};
 
-var FaceplateSession = function(plate, signed_request) {
+var FaceplateSession = function(options, signed_request) {
 
   var self = this;
 
-  this.plate = plate;
+  this.app_id = options.app_id;
+  this.secret = options.secret;
+  
   if (signed_request) {
       this.token  = signed_request.access_token || signed_request.oauth_token;
       this.signed_request = signed_request;
   }
 
   this.app = function(cb) {
-    self.get('/' + self.plate.app_id, function(err, app) {
+    self.get('/' + self.app_id, function(err, app) {
       cb(app);
     });
-  }
+  };
 
   this.me = function(cb) {
     if (self.token) {
@@ -109,7 +109,7 @@ var FaceplateSession = function(plate, signed_request) {
     } else {
       cb();
     }
-  }
+  };
 
   this.get = function(path, params, cb) {
     if (cb === undefined) {
@@ -128,7 +128,7 @@ var FaceplateSession = function(plate, signed_request) {
     } catch (err) {
       cb(err);
     }
-  }
+  };
 
   this.fql = function(query, cb) {
     var params = { access_token: self.token, format:'json' };
@@ -155,7 +155,7 @@ var FaceplateSession = function(plate, signed_request) {
       };
     }
     restler.get('https://api.facebook.com/method/'+method, { query: params }).on('complete', onComplete);
-  }
+  };
 
   this.post = function (params, cb) {
     restler.post(
@@ -169,9 +169,9 @@ var FaceplateSession = function(plate, signed_request) {
         var result = JSON.parse(data);
         cb(result.data ? result.data : result);
       });
-  }
-}
+  };
+};
 
 module.exports.middleware = function(options) {
   return new Faceplate(options).middleware();
-}
+};
