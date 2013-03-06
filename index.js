@@ -121,7 +121,7 @@ var FaceplateSession = function(plate, signed_request) {
       params.access_token = self.token;
 
     try {
-      restler.get('https://graph.facebook.com' + path, { query: params }).on('complete', function(data) {
+      restler.get('https://graph.facebook.com/' + path, { query: params }).on('complete', function(data) {
         var result = JSON.parse(data);
         cb(null, result);
       });
