@@ -46,8 +46,10 @@ var Faceplate = function(options) {
     var secret = self.secret;
     var expected_sig = crypto.createHmac('sha256', secret).update(encoded_data[1]).digest('base64').replace(/\+/g,'-').replace(/\//g,'_').replace('=','');
 
-    if (sig !== expected_sig)
+    if (sig !== expected_sig) {
       cb(new Error("bad signature"));
+      return;
+    }
 
     // not logged in or not authorized
     if (!data.user_id) {
@@ -60,8 +62,10 @@ var Faceplate = function(options) {
       return;
     }
 
-    if (!data.code)
+    if (!data.code) {
       cb(new Error("no oauth token and no code to get one"));
+      return;
+    }
 
     var params = {
       client_id:     self.app_id,
