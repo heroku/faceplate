@@ -12,7 +12,7 @@ var Faceplate = function(options) {
   this.secret  = this.options.secret;
 
   this.middleware = function() {
-    return function(req, res, next) {
+    return function faceplate(req, res, next) {
       if (req.body.signed_request) {
         self.parse_signed_request(req.body.signed_request, function(err, decoded_signed_request) {
           req.facebook = new FaceplateSession(self, decoded_signed_request);
