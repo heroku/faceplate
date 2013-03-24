@@ -40,6 +40,7 @@ var Faceplate = function(options) {
     // check algorithm
     if (!data.algorithm || (data.algorithm.toUpperCase() != 'HMAC-SHA256')) {
       cb(new Error("unknown algorithm. expected HMAC-SHA256"));
+      return;
     }
 
     // check signature
