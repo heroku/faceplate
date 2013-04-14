@@ -128,12 +128,10 @@ var FaceplateSession = function(plate, signed_request) {
         var request = restler.get('https://graph.facebook.com' + path,
           { query: params });
         request.on('fail', function(data) {
-          var result = JSON.parse(data);
-          cb(result);
+          cb(data);
         });
         request.on('success', function(data) {
-          var result = JSON.parse(data);
-          cb(null, result);
+          cb(null, data);
         });
     } catch (err) {
       cb(err);
