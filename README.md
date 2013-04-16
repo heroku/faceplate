@@ -40,7 +40,7 @@ app.get('/multiquery', function(req, res) {
   },
   function(err, result) {
     var inspect = require('util').inspect;
-    res.send('Yor likes: ' + inspect(result.likes) + ', your albums: ' + inspect(result.albums) );
+    res.send('Your likes: ' + inspect(result.likes) + ', your albums: ' + inspect(result.albums) );
   });
 });
 

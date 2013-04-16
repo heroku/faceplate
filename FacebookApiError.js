@@ -5,10 +5,14 @@ function FacebookApiError(error) {
   Error.captureStackTrace(this, this.constructor); 
 
   this.name = this.constructor.name;
-  for(x in error){
-  	if(error.hasOwnProperty(x))
-  		this[x] = error[x];
-  } 
+  if(typeof(error) == 'string' || !error){
+  	this.message = error
+  }else{
+	  for(x in error){
+		  	if(error.hasOwnProperty(x))
+		  		this[x] = error[x];
+		  } 
+	}
 
 } 
 
