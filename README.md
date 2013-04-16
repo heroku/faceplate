@@ -49,6 +49,15 @@ app.get('/signed_request', function(req, res) {
   res.send('Signed Request details: ' + require('util').inspect(req.facebook.signed_request));
 });
 
+app.get('/notify', function(req, res){
+  // notifications require an app session
+  req.facebook.appSession(function(err, session){
+    session.post('/1234/notifications', {href: '', template: 'Notification from app!'}, function(err, result){
+      res.send("Sent notification to uid 1234!");
+    });
+  });
+});
+
 ```
 
 ## License

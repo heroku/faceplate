@@ -2,6 +2,11 @@ var b64url  = require('b64url');
 var crypto  = require('crypto');
 var qs      = require('querystring');
 var restler = require('restler');
+var util    = require('util');
+var tools   = require('./tools');
+var fbError = require('./FacebookApiError');
+var merge   = tools.merge;
+
 
 var Faceplate = function(options) {
 
@@ -35,7 +40,8 @@ var Faceplate = function(options) {
 
     var sig  = encoded_data[0];
     var json = b64url.decode(encoded_data[1]);
-    var data = JSON.parse(json);
+    var data = tools.safeJSON(json);
+    if(!data) return cb(new Error('invalid json in signed request'))
 
     // check algorithm
     if (!data.algorithm || (data.algorithm.toUpperCase() != 'HMAC-SHA256')) {
@@ -62,6 +68,7 @@ var Faceplate = function(options) {
       cb(null,data);
       return;
     }
+    var user_id = data.user_id
 
     if (!data.code) {
       cb(new Error("no oauth token and no code to get one"));
@@ -79,12 +86,15 @@ var Faceplate = function(options) {
       { query:params });
 
     request.on('fail', function(data) {
-      var result = JSON.parse(data);
+      var result = tools.safeJSON(data) || result;
+      result.user_id = user_id
       cb(result);
     });
 
     request.on('success', function(data) {
-      cb(null,qs.parse(data));
+      data = tools.safeQS(data) || data
+      data.user_id = user_id 
+      cb(null,data);
     });
   };
 };
@@ -97,6 +107,40 @@ var FaceplateSession = function(plate, signed_request) {
   if (signed_request) {
       this.token  = signed_request.access_token || signed_request.oauth_token;
       this.signed_request = signed_request;
+  }
+
+  function _handleAPIResult(result, cb){
+      if(result.error){
+        cb(new fbError(result.error), result);
+      }else{
+        cb(null, result && result.data ? result.data : result);
+      }
+  }
+
+  this.appSession = function(cb){
+    var params = {
+      client_id: self.plate.app_id,
+      client_secret: self.plate.secret,
+      grant_type: 'client_credentials'
+    };
+    try{
+      restler.post('https://graph.facebook.com/oauth/access_token',{
+        data: params
+      }).on('complete', function(data){
+          var result = tools.safeQS(data)
+          if(result && result.access_token){
+            var session = new FaceplateSession(self.plate, self.signed_request);
+            session.token = result.access_token;
+            cb(null, session);
+          }else{
+            result = tools.safeJSON(result) || result
+            cb(new fbError(result && result.error), result);
+          }
+
+      });
+    }catch(err){
+      cb(err);
+    }
   }
 
   this.app = function(cb) {
@@ -115,28 +159,37 @@ var FaceplateSession = function(plate, signed_request) {
     }
   };
 
-  this.get = function(path, params, cb) {
+  this.request = function(method,path, params, cb) {
     if (cb === undefined) {
       cb = params;
       params = {};
     }
 
-    if (self.token)
-      params.access_token = self.token;
+    params = merge({access_token: self.token}, params || {});
 
     try {
-        var request = restler.get('https://graph.facebook.com' + path,
-          { query: params });
+        var opts = {}
+        opts[method == 'get' ? 'query' : 'data'] = params
+        var request = restler[method]('https://graph.facebook.com' + path, opts);
         request.on('fail', function(data) {
-          cb(data);
+          data = tools.safeJSON(data) || data
+          _handleAPIResult({error: data}, cb)
         });
         request.on('success', function(data) {
-          cb(null, data);
+          _handleAPIResult(data, cb)
         });
-    } catch (err) {
+     } catch (err) {
       cb(err);
     }
   };
+
+  this.get = function(path, params, cb){
+    return this.request('get', params, cb)
+  }
+
+  this.post = function(path, params, cb){
+    return this.request('post', params, cb)
+  }
 
   this.fql = function(query, cb) {
     var params = { access_token: self.token, format:'json' };
@@ -147,8 +200,8 @@ var FaceplateSession = function(plate, signed_request) {
       method = 'fql.query';
       params.query = query;
       onComplete = function(res){
-        var result = JSON.parse(res);
-        cb(null, result.data ? result.data : result);
+        var result = tools.safeJSON(res) || result;
+        _handleAPIResult(result, cb)
       };
     }
     else {
@@ -168,27 +221,13 @@ var FaceplateSession = function(plate, signed_request) {
     var request = restler.get('https://api.facebook.com/method/'+method,
       { query: params });
     request.on('fail', function(data) {
-      var result = JSON.parse(data);
-      cb(result);
+      var result = tools.safeJSON(data) || data
+      _handleAPIResult({error: result}, cb)
     });
     request.on('success', onComplete);
   };
 
-  this.post = function (params, cb) {
-    var request = restler.post(
-      'https://graph.facebook.com/me/feed',
-      {query: {access_token: self.token}, data: params}
-      );
-    request.on('fail', function(data) {
-      var result = JSON.parse(data);
-      cb(result);
-    });
-    request.on('success', function (data) {
-      var result = JSON.parse(data);
-      cb(null, result.data ? result.data : result);
-    });
-  };
-};
+
 
 module.exports.middleware = function(options) {
   return new Faceplate(options).middleware();
