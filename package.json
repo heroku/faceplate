@@ -1,16 +1,13 @@
 {
   "name":     "faceplate",
-  "version":  "0.5.0",
+  "version":  "0.6.0",
   "author":   "Heroku",
   "homepage": "https://github.com/heroku/faceplate",
-
   "description": "Wrapper for Facebook authentication and API",
-
   "repository": {
     "type": "git",
     "url":  "https://github.com/heroku/faceplate"
   },
-
   "dependencies": {
     "b64url":  "1.0.3",
     "restler": "2.0.0"
