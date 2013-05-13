@@ -8,7 +8,7 @@
   "description": "Wrapper for Facebook authentication and API",
   "repository": {
     "type": "git",
-    "url": "git@github.com:IlskenLabs/faceplate.git"
+    "url": "https://github.com/IlskenLabs/faceplate.git"
   },
   "dependencies": {
     "b64url": "1.0.3",
